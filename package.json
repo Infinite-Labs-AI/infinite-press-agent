@@ -1,0 +1,42 @@
+{
+  "name": "qwoted-worker",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Local background Qwoted scanner and auto-pitch worker using a dedicated browser profile and BYO AI.",
+  "type": "module",
+  "bin": {
+    "qwoted-worker": "./bin/qwoted-worker.js"
+  },
+  "files": [
+    "AGENTS.md",
+    ".env.example",
+    "bin",
+    "docs",
+    "LICENSE",
+    "src",
+    "tests",
+    "README.md"
+  ],
+  "scripts": {
+    "qwoted": "node bin/qwoted-worker.js run --limit 40 --max-submit 1 --min-score 80",
+    "qwoted:once": "node bin/qwoted-worker.js run --once --limit 40 --max-submit 1 --min-score 80",
+    "qwoted:dry": "node bin/qwoted-worker.js run --once --dry-run --debug --limit 40 --max-submit 1 --min-score 80",
+    "qwoted:login": "node bin/qwoted-worker.js init",
+    "qwoted:install": "node bin/qwoted-worker.js install",
+    "qwoted:status": "node bin/qwoted-worker.js status",
+    "test": "node --test tests/*.test.js",
+    "lint": "eslint .",
+    "scan": "node bin/qwoted-worker.js scan",
+    "run": "node bin/qwoted-worker.js run",
+    "init": "node bin/qwoted-worker.js init"
+  },
+  "dependencies": {
+    "puppeteer-core": "^25.7.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=20.18.1"
+  }
+}
