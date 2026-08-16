@@ -4,6 +4,7 @@ import { launchBrowser, settle } from "./browser.js";
 import { RUNS_DIR } from "./config.js";
 import { writeJson } from "./fs.js";
 import { log } from "./log.js";
+import { assertHeadlessSession } from "./session.js";
 
 export async function applyLatest(options = {}) {
   const latest = JSON.parse(readFileSync(join(RUNS_DIR, "latest.json"), "utf8"));
@@ -22,6 +23,7 @@ export async function applyLatest(options = {}) {
       const page = await browser.newPage();
       try {
         await page.goto(decision.url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+        await assertHeadlessSession(page);
         await settle(page);
         const submitResult = await submitPitch(page, decision.pitch, {
           submit: !dryRun,
@@ -68,8 +70,10 @@ async function submitPitch(page, pitch, { submit = true, debug = false, debugPre
   if (!filled) {
     await clickPitchAction(page);
     await settle(page, 1500);
+    await assertHeadlessSession(page);
     const unlocked = await handleStartPitchingGate(page, { submit, debug, debugPrefix });
     if (unlocked.status) return unlocked;
+    await assertHeadlessSession(page);
     filled = await fillPitchEditor(page, pitch);
     if (!filled && await tryClickSourceAction(page)) {
       await settle(page, 1500);
@@ -174,6 +178,7 @@ async function handleStartPitchingGate(page, { submit, debug, debugPrefix }) {
   const clicked = await clickStartPitchingAction(page);
   if (!clicked) throw new Error("start_pitching_button_not_found");
   await settle(page, 2000);
+  await assertHeadlessSession(page);
   return {};
 }
 

@@ -30,4 +30,14 @@ export async function assertHeadlessSession(page) {
   if (await isSignedOut(page)) {
     throw new Error("needs_human_login: run `qwoted-worker init`");
   }
+  const url = page.url();
+  const body = await page.evaluate(() => document.body?.innerText ?? "");
+  if (isAccountDisabled(url, body)) {
+    throw new Error("account_temporarily_disabled: contact Qwoted support to re-enable the account");
+  }
+}
+
+export function isAccountDisabled(url, body) {
+  return /show_account_disabled_modal=true|account\+temporarily\+disabled/i.test(url)
+    || /account temporarily disabled|chat with our support team to re-enable your account/i.test(body);
 }

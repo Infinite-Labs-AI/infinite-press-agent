@@ -4,6 +4,7 @@ import { extractRequestBody, hardSkipReason, normalizeLines } from "../src/extra
 import { nextDelayMs } from "../src/worker.js";
 import { parseDecisions } from "../src/codex.js";
 import { findBestPitchAction, findBestSourceAction, findBestStartPitchingAction } from "../src/apply.js";
+import { isAccountDisabled } from "../src/session.js";
 import { buildRunSummary } from "../src/summary.js";
 
 test("normalizeLines removes Qwoted chrome", () => {
@@ -57,6 +58,18 @@ test("findBestStartPitchingAction selects the credit unlock modal action", () =>
     { text: "Pitch Now" },
   ]);
   assert.equal(action.text, "Start Pitching");
+});
+
+test("isAccountDisabled detects Qwoted disabled account redirects", () => {
+  assert.equal(
+    isAccountDisabled(
+      "https://app.qwoted.com/dashboard?flash_primary=Account+temporarily+disabled.&show_account_disabled_modal=true",
+      "",
+    ),
+    true,
+  );
+  assert.equal(isAccountDisabled("https://app.qwoted.com/dashboard", "chat with our support team to re-enable your account"), true);
+  assert.equal(isAccountDisabled("https://app.qwoted.com/source_requests/test", "Pitch the opportunity"), false);
 });
 
 test("buildRunSummary prints submitted and skipped opportunities", () => {
