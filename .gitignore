@@ -4,7 +4,7 @@ node_modules/
 !.env.example
 
 # Runtime state. Never commit browser profiles, cookies, logs, screenshots, or reports.
-.qwoted-worker/
+.infinite-press-agent/
 chrome-profile/
 runs/
 logs/
@@ -18,4 +18,3 @@ logs/
 # Package outputs
 *.tgz
 coverage/
-recordings/

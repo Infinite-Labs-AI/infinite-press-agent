@@ -64,7 +64,7 @@ export function parseDecisions(text) {
 }
 
 async function runCodex(prompt) {
-  const outDir = join(tmpdir(), "qwoted-worker-codex");
+  const outDir = join(tmpdir(), "infinite-press-agent-codex");
   mkdirSync(outDir, { recursive: true, mode: 0o700 });
   const outFile = join(outDir, `last-message-${randomUUID()}.txt`);
   const args = [

@@ -28,7 +28,7 @@ export async function login({ visible = true } = {}) {
 
 export async function assertHeadlessSession(page) {
   if (await isSignedOut(page)) {
-    throw new Error("needs_human_login: run `infinite-media init`");
+    throw new Error("needs_human_login: run `infinite-press-agent init`");
   }
   const url = page.url();
   const body = await page.evaluate(() => document.body?.innerText ?? "");

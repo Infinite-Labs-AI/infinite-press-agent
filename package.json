@@ -1,12 +1,11 @@
 {
-  "name": "infinite-media",
+  "name": "infinite-press-agent",
   "version": "0.1.0",
   "private": false,
-  "description": "Local-first media automation workers, starting with Qwoted opportunity scanning and pitching.",
+  "description": "Local-first press opportunity scanner and pitching agent, starting with Qwoted.",
   "type": "module",
   "bin": {
-    "infinite-media": "./bin/qwoted-worker.js",
-    "qwoted-worker": "./bin/qwoted-worker.js"
+    "infinite-press-agent": "./bin/infinite-press-agent.js"
   },
   "files": [
     "AGENTS.md",
@@ -19,17 +18,17 @@
     "README.md"
   ],
   "scripts": {
-    "qwoted": "node bin/qwoted-worker.js run --limit 40 --max-submit 1 --min-score 80",
-    "qwoted:once": "node bin/qwoted-worker.js run --once --limit 40 --max-submit 1 --min-score 80",
-    "qwoted:dry": "node bin/qwoted-worker.js run --once --dry-run --debug --limit 40 --max-submit 1 --min-score 80",
-    "qwoted:login": "node bin/qwoted-worker.js init",
-    "qwoted:install": "node bin/qwoted-worker.js install",
-    "qwoted:status": "node bin/qwoted-worker.js status",
+    "qwoted": "node bin/infinite-press-agent.js run --limit 40 --max-submit 1 --min-score 80",
+    "qwoted:once": "node bin/infinite-press-agent.js run --once --limit 40 --max-submit 1 --min-score 80",
+    "qwoted:dry": "node bin/infinite-press-agent.js run --once --dry-run --debug --limit 40 --max-submit 1 --min-score 80",
+    "qwoted:login": "node bin/infinite-press-agent.js init",
+    "qwoted:install": "node bin/infinite-press-agent.js install",
+    "qwoted:status": "node bin/infinite-press-agent.js status",
     "test": "node --test tests/*.test.js",
     "lint": "eslint .",
-    "scan": "node bin/qwoted-worker.js scan",
-    "run": "node bin/qwoted-worker.js run",
-    "init": "node bin/qwoted-worker.js init"
+    "scan": "node bin/infinite-press-agent.js scan",
+    "run": "node bin/infinite-press-agent.js run",
+    "init": "node bin/infinite-press-agent.js init"
   },
   "dependencies": {
     "puppeteer-core": "^25.7.0"

@@ -1,6 +1,6 @@
-# Infinite Media
+# Infinite Press Agent
 
-Local-first media automation workers, starting with Qwoted scanning and pitching.
+Local-first press opportunity scanner and pitching agent, starting with Qwoted.
 
 It uses a dedicated Chrome profile for Qwoted login state, local browser automation for scanning/submission, and a BYO `codex` CLI for ranking opportunities and drafting pitches. It does not require hosted model API keys.
 
@@ -44,15 +44,15 @@ These can live in `.env`, shell profile, or the local worker config file.
 `npm run qwoted:login` opens Chrome with a dedicated profile:
 
 ```text
-~/.infinite-media/chrome-profile
+~/.infinite-press-agent/chrome-profile
 ```
 
 Sign up or log in manually. Future headless runs reuse that same browser profile. The worker does not print cookies, passwords, tokens, or Qwoted session values.
 
 ## Safety Model
 
-- Dedicated browser profile and state directory: `~/.infinite-media`
-- Logs and reports: `~/.infinite-media/runs`
+- Dedicated browser profile and state directory: `~/.infinite-press-agent`
+- Logs and reports: `~/.infinite-press-agent/runs`
 - Dry-run stops before final submit and before Qwoted's credit-spending gate.
 - Already-pitched, expired, fee-based, product roundup, personal anecdote, and licensed-expert requests are skipped before model ranking.
 - If login expires, run `npm run qwoted:login` again.

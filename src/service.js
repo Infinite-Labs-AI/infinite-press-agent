@@ -9,7 +9,7 @@ const PLIST_PATH = join(homedir(), "Library", "LaunchAgents", `${SERVICE_LABEL}.
 
 export async function installLaunchAgent() {
   ensureDirs();
-  const binPath = new URL("../bin/qwoted-worker.js", import.meta.url).pathname;
+  const binPath = new URL("../bin/infinite-press-agent.js", import.meta.url).pathname;
   const launchPath = process.env.PATH || "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin";
   mkdirSync(dirname(PLIST_PATH), { recursive: true });
   mkdirSync(LOGS_DIR, { recursive: true, mode: 0o700 });
@@ -39,7 +39,7 @@ export async function installLaunchAgent() {
   <dict>
     <key>PATH</key>
     <string>${escapePlist(launchPath)}</string>
-    <key>QWOTED_WORKER_HOME</key>
+    <key>INFINITE_PRESS_AGENT_HOME</key>
     <string>${APP_HOME}</string>
   </dict>
 </dict>

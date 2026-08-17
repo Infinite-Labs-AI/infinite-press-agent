@@ -33,7 +33,7 @@ try {
   if (shouldExit) process.exit(0);
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
-  console.error(`[infinite-media] ${message}`);
+  console.error(`[infinite-press-agent] ${message}`);
   process.exitCode = 1;
 }
 
@@ -57,7 +57,7 @@ function parseOptions(args) {
 }
 
 function printHelp() {
-  console.log(`infinite-media
+  console.log(`infinite-press-agent
 
 Commands:
   init/login        Open visible Chrome once so you can log into Qwoted

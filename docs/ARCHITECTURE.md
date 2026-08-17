@@ -1,6 +1,6 @@
 # Architecture
 
-Infinite Media is a local browser automation loop for media workflows. The first worker automates Qwoted scanning and pitching.
+Infinite Press Agent is a local browser automation loop for press workflows. The first worker automates Qwoted scanning and pitching.
 
 ## Runtime Loop
 
@@ -18,7 +18,7 @@ Infinite Media is a local browser automation loop for media workflows. The first
 Default state directory:
 
 ```text
-~/.infinite-media
+~/.infinite-press-agent
 ```
 
 Important subdirectories:
