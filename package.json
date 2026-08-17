@@ -5,6 +5,7 @@
   "description": "Local-first press opportunity scanner and pitching agent, starting with Qwoted.",
   "type": "module",
   "bin": {
+    "press-agent": "./bin/infinite-press-agent.js",
     "infinite-press-agent": "./bin/infinite-press-agent.js"
   },
   "files": [
