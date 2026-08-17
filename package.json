@@ -25,7 +25,6 @@
     "qwoted:login": "node bin/qwoted-worker.js init",
     "qwoted:install": "node bin/qwoted-worker.js install",
     "qwoted:status": "node bin/qwoted-worker.js status",
-    "qwoted:record": "node bin/qwoted-worker.js record",
     "test": "node --test tests/*.test.js",
     "lint": "eslint .",
     "scan": "node bin/qwoted-worker.js scan",

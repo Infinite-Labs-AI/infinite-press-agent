@@ -2,9 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { extractRequestBody, hardSkipReason, normalizeLines } from "../src/extract.js";
 import { nextDelayMs } from "../src/worker.js";
-import { buildDecisionPrompt, parseDecisions } from "../src/codex.js";
+import { parseDecisions } from "../src/codex.js";
 import { findBestPitchAction, findBestSourceAction, findBestStartPitchingAction } from "../src/apply.js";
-import { buildFfmpegArgs, opportunitySummaryFromCard, recordingFilename, recordingWindowSize, selectOpportunityLink, selectOpportunityLinks } from "../src/record.js";
 import { isAccountDisabled } from "../src/session.js";
 import { buildRunSummary } from "../src/summary.js";
 
@@ -32,15 +31,6 @@ test("parseDecisions parses fenced/noisy JSON array", () => {
   const decisions = parseDecisions('text [{"url":"u","score":91,"shouldSubmit":true,"reason":"r","angle":"a","pitch":"p"}]');
   assert.equal(decisions[0].url, "u");
   assert.equal(decisions[0].score, 91);
-});
-
-test("buildDecisionPrompt can focus recording selection on AI and tech opportunities", () => {
-  const prompt = buildDecisionPrompt(
-    [{ url: "u", title: "AI agents", outlet: "Tech", requestType: "EXPERT REQUEST", deadline: "today", body: "Need SaaS founders" }],
-    { focus: "AI, technology, startups" },
-  );
-  assert.match(prompt, /Strongly prefer opportunities matching this recording focus: AI, technology, startups/);
-  assert.match(prompt, /AI agents/);
 });
 
 test("findBestPitchAction prefers the opportunity CTA over nav pitch links", () => {
@@ -80,69 +70,6 @@ test("isAccountDisabled detects Qwoted disabled account redirects", () => {
   );
   assert.equal(isAccountDisabled("https://app.qwoted.com/dashboard", "chat with our support team to re-enable your account"), true);
   assert.equal(isAccountDisabled("https://app.qwoted.com/source_requests/test", "Pitch the opportunity"), false);
-});
-
-test("recordingFilename produces filesystem-safe mp4 names", () => {
-  assert.equal(recordingFilename(new Date("2026-08-17T09:08:07.006Z")), "qwoted-run-2026-08-17T09-08-07-006Z.mp4");
-});
-
-test("recordingWindowSize keeps the Qwoted results page readable", () => {
-  assert.deepEqual(recordingWindowSize(), { width: 1440, height: 1000 });
-});
-
-test("buildFfmpegArgs encodes screencast frames into a browser-safe mp4", () => {
-  const args = buildFfmpegArgs({ fps: 20, framesDir: "/tmp/frames", outputPath: "/tmp/out.mp4" });
-  assert.deepEqual(args, [
-    "-y",
-    "-framerate",
-    "20",
-    "-i",
-    "/tmp/frames/frame-%06d.jpg",
-    "-vf",
-    "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p",
-    "-movflags",
-    "+faststart",
-    "/tmp/out.mp4",
-  ]);
-});
-
-test("selectOpportunityLink ignores nav/search links and picks the first request detail URL", () => {
-  assert.equal(
-    selectOpportunityLink([
-      "https://app.qwoted.com/source_requests",
-      "https://app.qwoted.com/source_requests/search?query=ai",
-      "https://app.qwoted.com/source_requests/ai-agent-pricing",
-      "https://app.qwoted.com/source_requests/another",
-    ]),
-    "https://app.qwoted.com/source_requests/ai-agent-pricing",
-  );
-});
-
-test("selectOpportunityLinks returns distinct request detail URLs up to the requested count", () => {
-  assert.deepEqual(
-    selectOpportunityLinks([
-      "https://app.qwoted.com/source_requests/search?query=ai",
-      "https://app.qwoted.com/source_requests/ai-agent-pricing",
-      "https://app.qwoted.com/source_requests/ai-agent-pricing",
-      "https://app.qwoted.com/source_requests/anthropic-watermarking",
-      "https://app.qwoted.com/source_requests/restaurant-marketing",
-    ], 2),
-    [
-      "https://app.qwoted.com/source_requests/ai-agent-pricing",
-      "https://app.qwoted.com/source_requests/anthropic-watermarking",
-    ],
-  );
-});
-
-test("opportunitySummaryFromCard extracts a rankable opportunity from main-page text", () => {
-  const summary = opportunitySummaryFromCard({
-    url: "https://app.qwoted.com/source_requests/ai-agent-pricing",
-    text: "TechRound\nEXPERT REQUEST\nSaaS founders on AI agent pricing\nNeed founders building AI automation tools to discuss pricing when agents reduce seats.\nDeadline: today",
-  });
-  assert.equal(summary.title, "SaaS founders on AI agent pricing");
-  assert.equal(summary.outlet, "TechRound");
-  assert.match(summary.body, /AI automation tools/);
-  assert.equal(summary.pitchAvailable, true);
 });
 
 test("buildRunSummary prints submitted and skipped opportunities", () => {

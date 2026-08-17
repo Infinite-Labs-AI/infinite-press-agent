@@ -24,26 +24,7 @@ npm run qwoted:dry      # one safe dry run; never submits or spends a credit
 npm run qwoted:login    # opens visible Chrome for signup/login
 npm run qwoted:install  # macOS LaunchAgent background worker
 npm run qwoted:status   # background worker status/log tail
-npm run qwoted:record   # visible recording: scroll, open request, fill pitch, never submit
 ```
-
-## Recording A Demo
-
-Use this for a quick public-post recording of the real private session:
-
-```bash
-npm run qwoted:record
-```
-
-The recorder opens the real Qwoted browser profile, searches for AI/tech opportunities, opens three selected requests, clicks the pitch flow, fills draft pitches, and stops before submit. It saves an `.mp4` under `recordings/`.
-
-Useful options:
-
-```bash
-npm run qwoted:record -- --search "AI technology startup software" --opportunities 3 --limit 12 --fps 20
-```
-
-Review the video before posting. It can show private Qwoted opportunity text, account/profile details, credits, and disabled-account banners.
 
 ## Expert Profile
 
