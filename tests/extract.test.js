@@ -77,12 +77,12 @@ test("recordingFilename produces filesystem-safe mp4 names", () => {
   assert.equal(recordingFilename(new Date("2026-08-17T09:08:07.006Z")), "qwoted-run-2026-08-17T09-08-07-006Z.mp4");
 });
 
-test("buildFfmpegArgs encodes numbered jpg frames into a browser-safe mp4", () => {
-  const args = buildFfmpegArgs({ fps: 2, framesDir: "/tmp/frames", outputPath: "/tmp/out.mp4" });
+test("buildFfmpegArgs encodes screencast frames into a browser-safe mp4", () => {
+  const args = buildFfmpegArgs({ fps: 20, framesDir: "/tmp/frames", outputPath: "/tmp/out.mp4" });
   assert.deepEqual(args, [
     "-y",
     "-framerate",
-    "2",
+    "20",
     "-i",
     "/tmp/frames/frame-%06d.jpg",
     "-vf",

@@ -1,19 +1,19 @@
 import { existsSync } from "node:fs";
-import { mkdir, rm } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
+import { Buffer } from "node:buffer";
 import { join } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { launchBrowser, settle } from "./browser.js";
 import { APP_HOME, SOURCE_REQUESTS_URL } from "./config.js";
 import { ensureDirs } from "./fs.js";
-import { extractLinks } from "./extract.js";
 import { preparePitchDraft } from "./apply.js";
 
 const execFileAsync = promisify(execFile);
 
 export async function recordQwotedRun(options = {}) {
   ensureDirs();
-  const fps = Number(options.fps ?? 2);
+  const fps = Number(options.fps ?? 20);
   const recordingsDir = options.outputDir || join(process.cwd(), "recordings");
   const outputPath = options.outputPath || join(recordingsDir, recordingFilename());
   const framesDir = join(APP_HOME, "recording-frames");
@@ -25,7 +25,9 @@ export async function recordQwotedRun(options = {}) {
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: 1440, height: 1200 });
-    const recorder = startScreenshotRecorder(page, { fps, framesDir });
+    await page.goto(SOURCE_REQUESTS_URL, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await settle(page, 1800);
+    const recorder = await startTabScreencast(page, { fps, framesDir });
     let flowError;
     try {
       await runRecordedPitchFlow(page, options);
@@ -70,13 +72,11 @@ export function selectOpportunityLink(links) {
 }
 
 async function runRecordedPitchFlow(page, options) {
-  await page.goto(SOURCE_REQUESTS_URL, { waitUntil: "domcontentloaded", timeout: 60_000 });
-  await settle(page, 1500);
   await slowScroll(page);
-  const links = await extractLinks(page, Number(options.limit ?? 20));
+  const links = await collectOpportunityLinks(page, Number(options.limit ?? 20));
   const targetUrl = selectOpportunityLink(links);
   if (!targetUrl) throw new Error("recording_opportunity_not_found");
-  await page.goto(targetUrl, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await clickOpportunityLink(page, targetUrl);
   await settle(page, 1800);
   await slowScroll(page, { maxScrolls: 2 });
   await preparePitchDraft(page, options.pitch || defaultRecordingPitch(), { debug: false });
@@ -85,35 +85,85 @@ async function runRecordedPitchFlow(page, options) {
 
 async function slowScroll(page, { maxScrolls = 4 } = {}) {
   for (let index = 0; index < maxScrolls; index += 1) {
-    await page.evaluate(() => window.scrollBy({ top: Math.round(window.innerHeight * 0.75), behavior: "smooth" }));
-    await settle(page, 900);
+    await page.evaluate(async () => {
+      const distance = Math.round(window.innerHeight * 0.7);
+      const steps = 24;
+      for (let step = 0; step < steps; step += 1) {
+        window.scrollBy(0, distance / steps);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+    });
+    await settle(page, 250);
   }
-  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "smooth" }));
-  await settle(page, 900);
+  await page.evaluate(async () => {
+    const start = window.scrollY;
+    const steps = 28;
+    for (let step = 0; step < steps; step += 1) {
+      window.scrollTo(0, start * (1 - ((step + 1) / steps)));
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+  });
+  await settle(page, 400);
 }
 
-function startScreenshotRecorder(page, { fps, framesDir }) {
-  const intervalMs = Math.max(250, Math.round(1000 / fps));
-  let stopped = false;
+async function collectOpportunityLinks(page, limit) {
+  const links = await page.evaluate(() =>
+    Array.from(document.querySelectorAll("a[href*='/source_requests/']"))
+      .map((anchor) => new URL(anchor.href, window.location.origin).toString())
+      .filter((href) => /\/source_requests\/[^/?#]+/.test(href))
+      .filter((href) => !/\/source_requests\/search(?:[/?#]|$)/.test(href)),
+  );
+  return Array.from(new Set(links)).slice(0, limit);
+}
+
+async function clickOpportunityLink(page, targetUrl) {
+  const clicked = await page.evaluate((href) => {
+    const target = Array.from(document.querySelectorAll("a[href*='/source_requests/']")).find((anchor) => new URL(anchor.href, window.location.origin).toString() === href);
+    if (!target) return false;
+    target.scrollIntoView({ block: "center" });
+    target.click();
+    return true;
+  }, targetUrl);
+  if (!clicked) {
+    await page.goto(targetUrl, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    return;
+  }
+  await page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 30_000 }).catch(() => undefined);
+}
+
+async function startTabScreencast(page, { fps, framesDir }) {
+  const intervalMs = Math.max(33, Math.round(1000 / fps));
+  const client = await page.target().createCDPSession();
   let frames = 0;
-  const loop = (async () => {
-    while (!stopped) {
-      frames += 1;
-      await page.screenshot({
-        path: join(framesDir, `frame-${String(frames).padStart(6, "0")}.jpg`),
-        type: "jpeg",
-        quality: 82,
-        captureBeyondViewport: false,
-      }).catch(() => undefined);
-      await settle(page, intervalMs);
-    }
-  })();
+  let lastFrameAt = 0;
+  const writes = new Set();
+  const onFrame = (event) => {
+    client.send("Page.screencastFrameAck", { sessionId: event.sessionId }).catch(() => undefined);
+    const now = Date.now();
+    if (now - lastFrameAt < intervalMs) return;
+    lastFrameAt = now;
+    frames += 1;
+    const write = writeFile(join(framesDir, `frame-${String(frames).padStart(6, "0")}.jpg`), Buffer.from(event.data, "base64"))
+      .finally(() => writes.delete(write));
+    writes.add(write);
+  };
+  client.on("Page.screencastFrame", onFrame);
+  await client.send("Page.startScreencast", {
+    format: "jpeg",
+    quality: 86,
+    everyNthFrame: 1,
+  });
   return {
     frameCount: () => frames,
     stop: async () => {
-      stopped = true;
-      await loop;
-    },
+      await client.send("Page.stopScreencast").catch(() => undefined);
+      client.off("Page.screencastFrame", onFrame);
+      await Promise.allSettled(Array.from(writes));
+      await client.detach().catch(() => undefined);
+      if (frames < 2) {
+        throw new Error("recording_no_frames_captured");
+      }
+    }
   };
 }
 
