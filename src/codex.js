@@ -7,10 +7,14 @@ import { join } from "node:path";
 import { MIN_DECISION_SCORE } from "./config.js";
 import { readConfig } from "./fs.js";
 
-export async function decideWithCodex(opportunities) {
+export async function decideWithCodex(opportunities, options = {}) {
   if (opportunities.length === 0) return [];
+  return parseDecisions(await runCodex(buildDecisionPrompt(opportunities, options)));
+}
+
+export function buildDecisionPrompt(opportunities, options = {}) {
   const profile = expertProfile();
-  const prompt = [
+  return [
     "You are a Qwoted pitching worker.",
     `Expert profile: ${profile.name}`,
     `Expert context: ${profile.context}`,
@@ -18,6 +22,11 @@ export async function decideWithCodex(opportunities) {
     `The expert can pitch: ${profile.canPitch}`,
     `Reject: ${profile.reject}`,
     "",
+    ...(options.focus ? [
+      `Strongly prefer opportunities matching this recording focus: ${options.focus}`,
+      "Penalize unrelated opportunities even if the expert could technically comment.",
+      "",
+    ] : []),
     "Return strict JSON only: an array of objects {url, score, shouldSubmit, reason, angle, pitch}.",
     `Only set shouldSubmit=true when score >= ${MIN_DECISION_SCORE} and the pitch is directly credible.`,
     "Pitch: <=180 words, specific, journalist-useful, no generic PR opener.",
@@ -33,7 +42,6 @@ export async function decideWithCodex(opportunities) {
       })),
     }),
   ].join("\n");
-  return parseDecisions(await runCodex(prompt));
 }
 
 export function expertProfile() {

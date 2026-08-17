@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { extractRequestBody, hardSkipReason, normalizeLines } from "../src/extract.js";
 import { nextDelayMs } from "../src/worker.js";
-import { parseDecisions } from "../src/codex.js";
+import { buildDecisionPrompt, parseDecisions } from "../src/codex.js";
 import { findBestPitchAction, findBestSourceAction, findBestStartPitchingAction } from "../src/apply.js";
-import { buildFfmpegArgs, recordingFilename, selectOpportunityLink } from "../src/record.js";
+import { buildFfmpegArgs, opportunitySummaryFromCard, recordingFilename, selectOpportunityLink, selectOpportunityLinks } from "../src/record.js";
 import { isAccountDisabled } from "../src/session.js";
 import { buildRunSummary } from "../src/summary.js";
 
@@ -32,6 +32,15 @@ test("parseDecisions parses fenced/noisy JSON array", () => {
   const decisions = parseDecisions('text [{"url":"u","score":91,"shouldSubmit":true,"reason":"r","angle":"a","pitch":"p"}]');
   assert.equal(decisions[0].url, "u");
   assert.equal(decisions[0].score, 91);
+});
+
+test("buildDecisionPrompt can focus recording selection on AI and tech opportunities", () => {
+  const prompt = buildDecisionPrompt(
+    [{ url: "u", title: "AI agents", outlet: "Tech", requestType: "EXPERT REQUEST", deadline: "today", body: "Need SaaS founders" }],
+    { focus: "AI, technology, startups" },
+  );
+  assert.match(prompt, /Strongly prefer opportunities matching this recording focus: AI, technology, startups/);
+  assert.match(prompt, /AI agents/);
 });
 
 test("findBestPitchAction prefers the opportunity CTA over nav pitch links", () => {
@@ -103,6 +112,33 @@ test("selectOpportunityLink ignores nav/search links and picks the first request
     ]),
     "https://app.qwoted.com/source_requests/ai-agent-pricing",
   );
+});
+
+test("selectOpportunityLinks returns distinct request detail URLs up to the requested count", () => {
+  assert.deepEqual(
+    selectOpportunityLinks([
+      "https://app.qwoted.com/source_requests/search?query=ai",
+      "https://app.qwoted.com/source_requests/ai-agent-pricing",
+      "https://app.qwoted.com/source_requests/ai-agent-pricing",
+      "https://app.qwoted.com/source_requests/anthropic-watermarking",
+      "https://app.qwoted.com/source_requests/restaurant-marketing",
+    ], 2),
+    [
+      "https://app.qwoted.com/source_requests/ai-agent-pricing",
+      "https://app.qwoted.com/source_requests/anthropic-watermarking",
+    ],
+  );
+});
+
+test("opportunitySummaryFromCard extracts a rankable opportunity from main-page text", () => {
+  const summary = opportunitySummaryFromCard({
+    url: "https://app.qwoted.com/source_requests/ai-agent-pricing",
+    text: "TechRound\nEXPERT REQUEST\nSaaS founders on AI agent pricing\nNeed founders building AI automation tools to discuss pricing when agents reduce seats.\nDeadline: today",
+  });
+  assert.equal(summary.title, "SaaS founders on AI agent pricing");
+  assert.equal(summary.outlet, "TechRound");
+  assert.match(summary.body, /AI automation tools/);
+  assert.equal(summary.pitchAvailable, true);
 });
 
 test("buildRunSummary prints submitted and skipped opportunities", () => {
