@@ -2,18 +2,19 @@ import puppeteer from "puppeteer-core";
 import { CHROME_PATH, CHROME_PROFILE_DIR } from "./config.js";
 import { ensureDirs } from "./fs.js";
 
-export async function launchBrowser({ visible = false } = {}) {
+export async function launchBrowser({ visible = false, windowSize = null } = {}) {
   ensureDirs();
   return puppeteer.launch({
     executablePath: CHROME_PATH,
     headless: visible ? false : "new",
     userDataDir: CHROME_PROFILE_DIR,
-    defaultViewport: { width: 1440, height: 1200 },
+    defaultViewport: windowSize ? { ...windowSize, deviceScaleFactor: 1 } : { width: 1440, height: 1200 },
     args: [
       "--no-first-run",
       "--no-default-browser-check",
       "--disable-notifications",
       "--disable-background-networking",
+      ...(windowSize ? [`--window-size=${windowSize.width},${windowSize.height}`] : []),
     ],
   });
 }

@@ -24,12 +24,18 @@ export async function recordQwotedRun(options = {}) {
   await rm(framesDir, { recursive: true, force: true });
   await mkdir(framesDir, { recursive: true });
   const searchQuery = recordingSearchQuery(options);
+  progress("Preparing Qwoted recording demo", {
+    search: searchQuery,
+    opportunities: Number(options.opportunities ?? 3),
+  });
   const targetUrls = await selectRecordingTargetUrls({ ...options, searchQuery });
+  progress("AI selected opportunities for the recording", { selected: targetUrls.length });
 
-  const browser = await launchBrowser({ visible: true });
+  progress("Opening visible Chrome and starting capture");
+  const browser = await launchBrowser({ visible: true, windowSize: recordingWindowSize() });
   try {
     const page = await browser.newPage();
-    await page.setViewport({ width: 1440, height: 1200 });
+    await page.setViewport({ ...recordingWindowSize(), deviceScaleFactor: 1 });
     await page.goto(SOURCE_REQUESTS_URL, { waitUntil: "domcontentloaded", timeout: 60_000 });
     await settle(page, 1200);
     const recorder = await startTabScreencast(page, { fps, framesDir });
@@ -42,6 +48,7 @@ export async function recordQwotedRun(options = {}) {
       await recorder.stop();
     }
     await encodeFrames({ fps, framesDir, outputPath });
+    progress("Recording encoded", { outputPath, frames: recorder.frameCount() });
     if (flowError) {
       const message = flowError instanceof Error ? flowError.message : String(flowError);
       throw new Error(`recording_flow_failed: ${message}; partial recording saved: ${outputPath}`);
@@ -55,6 +62,10 @@ export async function recordQwotedRun(options = {}) {
 
 export function recordingFilename(date = new Date()) {
   return `qwoted-run-${date.toISOString().replace(/[:.]/g, "-")}.mp4`;
+}
+
+export function recordingWindowSize() {
+  return { width: 1440, height: 1000 };
 }
 
 export function buildFfmpegArgs({ fps, framesDir, outputPath }) {
@@ -110,6 +121,10 @@ async function selectRecordingTargetUrls(options) {
   const opportunityCount = Number(options.opportunities ?? 3);
   const scanLimit = Number(options.limit ?? 12);
   const focus = options.focus || "AI, technology, startups, software, automation, B2B SaaS, marketing technology, data, cybersecurity, crypto/web3 where credible";
+  progress("Searching Qwoted opportunities for AI/tech matches", {
+    search: options.searchQuery,
+    limit: scanLimit,
+  });
   const browser = await launchBrowser({ visible: false });
   try {
     const page = await browser.newPage();
@@ -121,6 +136,7 @@ async function selectRecordingTargetUrls(options) {
       .map(opportunitySummaryFromCard)
       .filter((opportunity) => !hardSkipReason(opportunity));
     if (!summaries.length) throw new Error("recording_no_eligible_opportunities");
+    progress("Ranking opportunities with AI", { candidates: summaries.length });
     const decisions = await decideWithCodex(summaries, { focus });
     const selected = decisions
       .filter((decision) => decision.shouldSubmit)
@@ -146,6 +162,10 @@ async function selectRecordingTargetUrls(options) {
   }
 }
 
+function progress(message, meta = undefined) {
+  log(message, meta);
+}
+
 function recordingSearchQuery(options) {
   return options.search || options.query || "AI technology startup software";
 }
@@ -153,10 +173,15 @@ function recordingSearchQuery(options) {
 async function applyOpportunitySearch(page, query) {
   if (!query) return;
   await page.waitForSelector("input[type='search']", { timeout: 10_000 });
+  const client = await page.target().createCDPSession();
+  await client.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1.18 }).catch(() => undefined);
   await page.click("input[type='search']", { clickCount: 3 });
   await page.keyboard.press("Backspace");
   await page.keyboard.type(query, { delay: 16 });
-  await settle(page, 1800);
+  await settle(page, 1200);
+  await client.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 }).catch(() => undefined);
+  await client.detach().catch(() => undefined);
+  await settle(page, 900);
 }
 
 function techKeywordScore(opportunity) {

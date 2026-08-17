@@ -4,7 +4,7 @@ import { extractRequestBody, hardSkipReason, normalizeLines } from "../src/extra
 import { nextDelayMs } from "../src/worker.js";
 import { buildDecisionPrompt, parseDecisions } from "../src/codex.js";
 import { findBestPitchAction, findBestSourceAction, findBestStartPitchingAction } from "../src/apply.js";
-import { buildFfmpegArgs, opportunitySummaryFromCard, recordingFilename, selectOpportunityLink, selectOpportunityLinks } from "../src/record.js";
+import { buildFfmpegArgs, opportunitySummaryFromCard, recordingFilename, recordingWindowSize, selectOpportunityLink, selectOpportunityLinks } from "../src/record.js";
 import { isAccountDisabled } from "../src/session.js";
 import { buildRunSummary } from "../src/summary.js";
 
@@ -84,6 +84,10 @@ test("isAccountDisabled detects Qwoted disabled account redirects", () => {
 
 test("recordingFilename produces filesystem-safe mp4 names", () => {
   assert.equal(recordingFilename(new Date("2026-08-17T09:08:07.006Z")), "qwoted-run-2026-08-17T09-08-07-006Z.mp4");
+});
+
+test("recordingWindowSize keeps the Qwoted results page readable", () => {
+  assert.deepEqual(recordingWindowSize(), { width: 1440, height: 1000 });
 });
 
 test("buildFfmpegArgs encodes screencast frames into a browser-safe mp4", () => {
