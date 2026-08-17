@@ -17,7 +17,7 @@ Do not commit any of these.
 The worker intentionally avoids manual cookie copy/paste. It stores browser auth state only inside a dedicated Chrome profile:
 
 ```text
-~/.qwoted-worker/chrome-profile
+~/.infinite-media/chrome-profile
 ```
 
 If auth expires, run:

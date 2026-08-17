@@ -4,6 +4,7 @@ import { extractRequestBody, hardSkipReason, normalizeLines } from "../src/extra
 import { nextDelayMs } from "../src/worker.js";
 import { parseDecisions } from "../src/codex.js";
 import { findBestPitchAction, findBestSourceAction, findBestStartPitchingAction } from "../src/apply.js";
+import { buildFfmpegArgs, recordingFilename, selectOpportunityLink } from "../src/record.js";
 import { isAccountDisabled } from "../src/session.js";
 import { buildRunSummary } from "../src/summary.js";
 
@@ -70,6 +71,38 @@ test("isAccountDisabled detects Qwoted disabled account redirects", () => {
   );
   assert.equal(isAccountDisabled("https://app.qwoted.com/dashboard", "chat with our support team to re-enable your account"), true);
   assert.equal(isAccountDisabled("https://app.qwoted.com/source_requests/test", "Pitch the opportunity"), false);
+});
+
+test("recordingFilename produces filesystem-safe mp4 names", () => {
+  assert.equal(recordingFilename(new Date("2026-08-17T09:08:07.006Z")), "qwoted-run-2026-08-17T09-08-07-006Z.mp4");
+});
+
+test("buildFfmpegArgs encodes numbered jpg frames into a browser-safe mp4", () => {
+  const args = buildFfmpegArgs({ fps: 2, framesDir: "/tmp/frames", outputPath: "/tmp/out.mp4" });
+  assert.deepEqual(args, [
+    "-y",
+    "-framerate",
+    "2",
+    "-i",
+    "/tmp/frames/frame-%06d.jpg",
+    "-vf",
+    "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p",
+    "-movflags",
+    "+faststart",
+    "/tmp/out.mp4",
+  ]);
+});
+
+test("selectOpportunityLink ignores nav/search links and picks the first request detail URL", () => {
+  assert.equal(
+    selectOpportunityLink([
+      "https://app.qwoted.com/source_requests",
+      "https://app.qwoted.com/source_requests/search?query=ai",
+      "https://app.qwoted.com/source_requests/ai-agent-pricing",
+      "https://app.qwoted.com/source_requests/another",
+    ]),
+    "https://app.qwoted.com/source_requests/ai-agent-pricing",
+  );
 });
 
 test("buildRunSummary prints submitted and skipped opportunities", () => {

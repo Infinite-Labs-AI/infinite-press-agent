@@ -2,6 +2,7 @@
 
 import { applyLatest } from "../src/apply.js";
 import { installLaunchAgent, printStatus, uninstallLaunchAgent } from "../src/service.js";
+import { recordQwotedRun } from "../src/record.js";
 import { login } from "../src/session.js";
 import { scan } from "../src/scan.js";
 import { runWorker } from "../src/worker.js";
@@ -21,6 +22,9 @@ try {
     const options = parseOptions(args);
     await runWorker(options);
     shouldExit = options.once === true;
+  } else if (command === "record") {
+    const result = await recordQwotedRun(parseOptions(args));
+    console.log(`Recording saved: ${result.outputPath}`);
   } else if (command === "install") {
     await installLaunchAgent(parseOptions(args));
   } else if (command === "uninstall") {
@@ -33,7 +37,7 @@ try {
   if (shouldExit) process.exit(0);
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
-  console.error(`[qwoted-worker] ${message}`);
+  console.error(`[infinite-media] ${message}`);
   process.exitCode = 1;
 }
 
@@ -57,13 +61,14 @@ function parseOptions(args) {
 }
 
 function printHelp() {
-  console.log(`qwoted-worker
+  console.log(`infinite-media
 
 Commands:
   init/login        Open visible Chrome once so you can log into Qwoted
   scan              Headless scan, clean extract, hard filter, Codex shortlist
   apply             Apply latest scan decisions
   run               Scan + apply now, then every 2h + 1-20m jitter unless --once
+  record            Record visible dry-run: scroll, open a request, fill pitch, never submit
   install           Write and start macOS LaunchAgent background worker
   uninstall         Unload/remove macOS LaunchAgent plist
   status            Print launchd/log status

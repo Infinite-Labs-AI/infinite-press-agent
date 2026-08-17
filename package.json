@@ -1,10 +1,11 @@
 {
-  "name": "qwoted-worker",
+  "name": "infinite-media",
   "version": "0.1.0",
   "private": false,
-  "description": "Local background Qwoted scanner and auto-pitch worker using a dedicated browser profile and BYO AI.",
+  "description": "Local-first media automation workers, starting with Qwoted opportunity scanning and pitching.",
   "type": "module",
   "bin": {
+    "infinite-media": "./bin/qwoted-worker.js",
     "qwoted-worker": "./bin/qwoted-worker.js"
   },
   "files": [
@@ -24,6 +25,7 @@
     "qwoted:login": "node bin/qwoted-worker.js init",
     "qwoted:install": "node bin/qwoted-worker.js install",
     "qwoted:status": "node bin/qwoted-worker.js status",
+    "qwoted:record": "node bin/qwoted-worker.js record",
     "test": "node --test tests/*.test.js",
     "lint": "eslint .",
     "scan": "node bin/qwoted-worker.js scan",

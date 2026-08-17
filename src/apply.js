@@ -91,6 +91,10 @@ async function submitPitch(page, pitch, { submit = true, debug = false, debugPre
   return { debugPath };
 }
 
+export async function preparePitchDraft(page, pitch, options = {}) {
+  return submitPitch(page, pitch, { ...options, submit: false });
+}
+
 export function findBestPitchAction(actions) {
   return actions
     .map((action) => ({ ...action, score: scorePitchAction(action) }))

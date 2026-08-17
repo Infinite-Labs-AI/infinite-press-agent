@@ -1,6 +1,6 @@
 # Architecture
 
-Qwoted Worker is a local browser automation loop.
+Infinite Media is a local browser automation loop for media workflows. The first worker automates Qwoted scanning and pitching.
 
 ## Runtime Loop
 
@@ -18,7 +18,7 @@ Qwoted Worker is a local browser automation loop.
 Default state directory:
 
 ```text
-~/.qwoted-worker
+~/.infinite-media
 ```
 
 Important subdirectories:
